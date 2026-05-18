@@ -76,7 +76,7 @@ namespace InvoicesManager
         {
             try
             {
-                using (SQLiteConnection connection = new SQLiteConnection("Data Source=invoices.db;Version=3;"))
+                using (SQLiteConnection connection = new SQLiteConnection(DatabaseHelper.GetConnectionStringPublic()))
                 {
                     connection.Open();
                     string query = @"

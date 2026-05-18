@@ -1,13 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.IO;
 
 namespace InvoicesManager
 {
     //CRUD Operation => Create, Read
     public static class DatabaseHelper
     {
-        private static string connectionString = "Data Source=invoices.db;Version=3;";
+        private const string DatabaseFileName = "invoices.db";
+        private static readonly string databasePath = ResolveDatabasePath();
+        private static readonly string connectionString = GetConnectionString();
+
+        private static string GetConnectionString()
+        {
+            return $"Data Source={databasePath};Version=3;";
+        }
+
+        public static string GetConnectionStringPublic()
+        {
+            return connectionString;
+        }
+
+        public static string GetDatabasePath()
+        {
+            return databasePath;
+        }
 
         public static void InitializeDatabase()
         {
@@ -323,6 +341,161 @@ namespace InvoicesManager
                 insertSeqCmd.ExecuteNonQuery();
             }
         }
+
+        private static string ResolveDatabasePath()
+        {
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            if (!LooksLikeBuildOutputDirectory(baseDirectory))
+            {
+                return Path.Combine(baseDirectory, DatabaseFileName);
+            }
+
+            string projectDatabasePath = Path.GetFullPath(Path.Combine(baseDirectory, @"..\..\invoices.db"));
+            string runtimeDatabasePath = Path.Combine(baseDirectory, DatabaseFileName);
+            string solutionDatabasePath = Path.GetFullPath(Path.Combine(baseDirectory, @"..\..\..\invoices.db"));
+            string bestSourcePath = SelectBestExistingDatabasePath(
+                projectDatabasePath,
+                solutionDatabasePath,
+                runtimeDatabasePath);
+
+            PromoteDatabaseToProjectPath(bestSourcePath, projectDatabasePath);
+            return projectDatabasePath;
+        }
+
+        private static bool LooksLikeBuildOutputDirectory(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            string normalizedPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string configurationFolderName = Path.GetFileName(normalizedPath);
+            string parentFolder = Path.GetDirectoryName(normalizedPath);
+            string parentFolderName = Path.GetFileName(parentFolder);
+
+            bool isBuildConfigurationFolder =
+                string.Equals(configurationFolderName, "Debug", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(configurationFolderName, "Release", StringComparison.OrdinalIgnoreCase);
+
+            return isBuildConfigurationFolder &&
+                   string.Equals(parentFolderName, "bin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string SelectBestExistingDatabasePath(params string[] candidatePaths)
+        {
+            if (candidatePaths == null || candidatePaths.Length == 0)
+            {
+                return null;
+            }
+
+            string bestPath = null;
+            long bestInvoiceCount = long.MinValue;
+            DateTime bestLastWrite = DateTime.MinValue;
+
+            foreach (string candidatePath in candidatePaths)
+            {
+                if (string.IsNullOrWhiteSpace(candidatePath) || !File.Exists(candidatePath))
+                {
+                    continue;
+                }
+
+                long invoiceCount = GetInvoiceCountSafe(candidatePath);
+                DateTime lastWrite = File.GetLastWriteTimeUtc(candidatePath);
+
+                bool shouldReplaceBest =
+                    invoiceCount > bestInvoiceCount ||
+                    (invoiceCount == bestInvoiceCount && lastWrite > bestLastWrite);
+
+                if (!shouldReplaceBest)
+                {
+                    continue;
+                }
+
+                bestPath = candidatePath;
+                bestInvoiceCount = invoiceCount;
+                bestLastWrite = lastWrite;
+            }
+
+            return bestPath;
+        }
+
+        private static long GetInvoiceCountSafe(string databasePath)
+        {
+            try
+            {
+                using (var connection = new SQLiteConnection($"Data Source={databasePath};Version=3;Read Only=True;"))
+                {
+                    connection.Open();
+
+                    using (var tableCheck = new SQLiteCommand("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'Invoices'", connection))
+                    {
+                        long tableExists = Convert.ToInt64(tableCheck.ExecuteScalar());
+                        if (tableExists == 0)
+                        {
+                            return 0;
+                        }
+                    }
+
+                    using (var countCommand = new SQLiteCommand("SELECT COUNT(*) FROM Invoices", connection))
+                    {
+                        return Convert.ToInt64(countCommand.ExecuteScalar());
+                    }
+                }
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void PromoteDatabaseToProjectPath(string sourcePath, string destinationPath)
+        {
+            if (string.IsNullOrWhiteSpace(destinationPath))
+            {
+                return;
+            }
+
+            string destinationDirectory = Path.GetDirectoryName(destinationPath);
+            if (!string.IsNullOrWhiteSpace(destinationDirectory))
+            {
+                Directory.CreateDirectory(destinationDirectory);
+            }
+
+            if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath))
+            {
+                return;
+            }
+
+            if (string.Equals(sourcePath, destinationPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (!File.Exists(destinationPath))
+            {
+                File.Copy(sourcePath, destinationPath, false);
+                return;
+            }
+
+            long sourceInvoices = GetInvoiceCountSafe(sourcePath);
+            long destinationInvoices = GetInvoiceCountSafe(destinationPath);
+            DateTime sourceLastWrite = File.GetLastWriteTimeUtc(sourcePath);
+            DateTime destinationLastWrite = File.GetLastWriteTimeUtc(destinationPath);
+
+            bool shouldPromote =
+                sourceInvoices > destinationInvoices ||
+                (sourceInvoices == destinationInvoices && sourceLastWrite > destinationLastWrite);
+
+            if (!shouldPromote)
+            {
+                return;
+            }
+
+            string backupPath = destinationPath + ".backup";
+            File.Copy(destinationPath, backupPath, true);
+            File.Copy(sourcePath, destinationPath, true);
+        }
     }
 }
-
