@@ -46,17 +46,29 @@ Developed by **Bogdan2K2**.
 
 ## Screenshots
 
-### Export Preview (Excel + Word)
+### 1. Main Dashboard
+
+The home screen provides a quick business summary (`Total Invoices` and `Total Amount`) and clear entry points for the core workflow: adding invoices, viewing invoices, and exiting the app.
+
+![Main Dashboard](docs/images/main-dashboard.png)
+
+### 2. Add Invoice Form
+
+This form captures invoice data with validation for required fields (client, invoice number, amount) and a date picker for consistent date entry.
+
+![Add Invoice Form](docs/images/add-invoice-form.png)
+
+### 3. Invoices List With Actions
+
+The invoices grid shows all records with action columns for `Edit` and `Delete`, plus export buttons for Excel and Word at the bottom.
+
+![Invoices List](docs/images/invoices-list.png)
+
+### 4. Export Preview (Excel + Word)
+
+The app exports invoice rows (with logos) to Excel and creates a branded Word invoice that includes calculated totals and a generated barcode.
 
 ![Export Preview](docs/images/export-preview.png)
-
-### Additional UI Screenshots
-
-Add the remaining screenshots in `docs/images/` using:
-
-- `main-dashboard.png`
-- `add-invoice-form.png`
-- `invoices-list.png`
 
 ## License
 
