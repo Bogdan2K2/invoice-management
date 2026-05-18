@@ -1,0 +1,27 @@
+﻿# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# NuGet
+*.nupkg
+packages/
+
+# Database/runtime artifacts
+*.db
+*.sqlite
+*.log
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Rider / VS Code
+.idea/
+.vscode/
