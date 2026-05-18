@@ -46,14 +46,17 @@ Developed by **Bogdan2K2**.
 
 ## Screenshots
 
-Place your UI screenshots in `docs/images/` and reference them here.
+### Export Preview (Excel + Word)
 
-Suggested files:
+![Export Preview](docs/images/export-preview.png)
 
-- `docs/images/main-dashboard.png`
-- `docs/images/add-invoice-form.png`
-- `docs/images/invoices-list.png`
-- `docs/images/export-preview.png`
+### Additional UI Screenshots
+
+Add the remaining screenshots in `docs/images/` using:
+
+- `main-dashboard.png`
+- `add-invoice-form.png`
+- `invoices-list.png`
 
 ## License
 
