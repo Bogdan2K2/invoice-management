@@ -35,7 +35,7 @@ Developed by **Bogdan2K2**.
 - Windows 10/11
 - Visual Studio 2022 (or compatible MSBuild tooling)
 - .NET Framework 4.7.2 Developer Pack
-- Microsoft Office (for Word/Excel export features)
+- Microsoft Office (required for Word/Excel export features)
 
 ### Steps
 
@@ -43,6 +43,11 @@ Developed by **Bogdan2K2**.
 2. Restore NuGet packages.
 3. Set `InvoicesManager` as startup project.
 4. Build and run.
+
+## Notes
+
+- Word and Excel export features rely on Microsoft Office Interop, so Office must be installed on the machine running the app.
+- If you need a server-side or headless export flow, prefer EPPlus/OpenXML-based export instead of Office automation.
 
 ## Screenshots
 
